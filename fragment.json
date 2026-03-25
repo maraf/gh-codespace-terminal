@@ -4,8 +4,9 @@
       "guid": "{3a1967af-b849-5bb3-b630-e693b72a951a}",
       "name": "Codespace SSH",
       "commandline": "pwsh.exe -NoLogo -NoProfile -File \"%LOCALAPPDATA%\\Microsoft\\Windows Terminal\\Fragments\\gh-codespace-windows-terminal\\codespace-ssh.ps1\"",
+      "icon": "\ue943",
       "suppressApplicationTitle": false,
-      "tabColor": "#2ea44f"
+      "tabColor": "#C19C00"
     }
   ]
 }

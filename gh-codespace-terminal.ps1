@@ -6,9 +6,9 @@
     fragment and launcher script to the appropriate location so that a "Codespace SSH"
     profile appears automatically in Windows Terminal.
 .EXAMPLE
-    gh codespace-windows-terminal install
-    gh codespace-windows-terminal uninstall
-    gh codespace-windows-terminal status
+    gh codespace-terminal install
+    gh codespace-terminal uninstall
+    gh codespace-terminal status
 #>
 
 param(
@@ -19,7 +19,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$fragmentDir = Join-Path $env:LOCALAPPDATA "Microsoft\Windows Terminal\Fragments\gh-codespace-windows-terminal"
+$fragmentDir = Join-Path $env:LOCALAPPDATA "Microsoft\Windows Terminal\Fragments\gh-codespace-terminal"
 $extensionDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 function Install-Fragment {
@@ -63,13 +63,13 @@ function Show-Status {
 }
 
 function Show-Help {
-    Write-Host "gh codespace-windows-terminal" -ForegroundColor Cyan
+    Write-Host "gh codespace-terminal" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Adds a 'Codespace SSH' profile to Windows Terminal that lets you"
     Write-Host "interactively pick a codespace and SSH into it."
     Write-Host ""
     Write-Host "USAGE" -ForegroundColor Yellow
-    Write-Host "  gh codespace-windows-terminal <command>"
+    Write-Host "  gh codespace-terminal <command>"
     Write-Host ""
     Write-Host "COMMANDS" -ForegroundColor Yellow
     Write-Host "  install     Install the Windows Terminal fragment"

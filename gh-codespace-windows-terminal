@@ -5,7 +5,19 @@ case "$(uname -s)" in
     Darwin)
         exec bash "$DIR/gh-codespace-windows-terminal.macos.sh" "$@"
         ;;
-    *)
+    Linux)
+        if command -v pwsh >/dev/null 2>&1; then
+            exec pwsh -NoLogo -NoProfile -File "$DIR/gh-codespace-windows-terminal.ps1" "$@"
+        else
+            echo "Error: PowerShell (pwsh) not found on PATH. Please install PowerShell for Linux." >&2
+            exit 1
+        fi
+        ;;
+    MINGW*|MSYS*|CYGWIN*)
         exec pwsh.exe -NoLogo -NoProfile -File "$DIR/gh-codespace-windows-terminal.ps1" "$@"
+        ;;
+    *)
+        echo "Error: Unsupported OS: $(uname -s)" >&2
+        exit 1
         ;;
 esac

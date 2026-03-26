@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# Interactive codespace SSH launcher with tab-title integration for iTerm2.
+set -euo pipefail
+
+# Ensure common macOS tool paths are available (iTerm2 dynamic profiles may
+# launch with a minimal PATH that doesn't include Homebrew or MacPorts).
+for _p in /opt/homebrew/bin /usr/local/bin /opt/local/bin; do
+    case ":${PATH}:" in
+        *":${_p}:"*) ;;
+        *) [ -d "$_p" ] && PATH="${_p}:${PATH}" ;;
+    esac
+done
+export PATH
+unset _p
+
+# Verify gh is available
+if ! command -v gh >/dev/null 2>&1; then
+    echo "Missing dependency: gh" >&2
+    echo "Install the GitHub CLI from https://cli.github.com/" >&2
+    exit 1
+fi
+
+# Fetch codespaces list — capture stdout (JSON) and stderr separately so that
+# any warnings/notices printed to stderr do not corrupt the JSON payload.
+echo ""
+printf "  Loading codespaces...\r"
+_gh_stderr="$(mktemp)"
+if ! json="$(gh codespace list --json name,displayName,repository,state 2>"$_gh_stderr")"; then
+    printf "                        \r"
+    echo "Failed to list codespaces. Make sure you're logged in: gh auth login" >&2
+    cat "$_gh_stderr" >&2
+    rm -f "$_gh_stderr"
+    exit 1
+fi
+rm -f "$_gh_stderr"
+printf "                        \r"
+
+# Parse JSON into TSV rows: name<TAB>displayName<TAB>repository<TAB>state
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "python3 is required but not found." >&2
+    exit 1
+fi
+
+# Parse the JSON with python3, capturing stdout (TSV rows) and stderr separately,
+# and explicitly check the python3 exit status so that JSON parse failures are
+# detected reliably.
+_py_stderr="$(mktemp)"
+if ! parsed_tsv="$(echo "$json" | python3 -c '
+import json, sys
+data = json.loads(sys.stdin.read() or "[]")
+for cs in data:
+    name  = cs.get("name", "")
+    disp  = cs.get("displayName", "")
+    repo  = cs.get("repository", "")
+    state = cs.get("state", "")
+    print("{}\t{}\t{}\t{}".format(name, disp, repo, state))
+' 2>"$_py_stderr")"; then
+    printf "                        \r"
+    echo "Failed to parse codespace list. Unexpected output from 'gh codespace list':" >&2
+    echo "python3 stderr:" >&2
+    cat "$_py_stderr" >&2
+    echo "Raw JSON from 'gh codespace list':" >&2
+    echo "$json" >&2
+    rm -f "$_py_stderr"
+    exit 1
+fi
+rm -f "$_py_stderr"
+
+# Use a while-read loop instead of mapfile for compatibility with Bash 3.2
+# (the default /bin/bash on macOS).
+rows=()
+while IFS= read -r line; do
+    [ -n "$line" ] && rows+=("$line")
+done <<< "$parsed_tsv"
+
+if [ ${#rows[@]} -eq 0 ]; then
+    echo "No codespaces found."
+    exit 0
+fi
+
+# ── Selection ────────────────────────────────────────────────────────────────
+
+chosen_tsv=""
+
+if command -v fzf >/dev/null 2>&1; then
+    # Use fzf: show displayName, repository, [state]; keep full TSV on selection
+    chosen_tsv="$(
+        printf '%s\n' "${rows[@]}" \
+        | awk -F'\t' '{ printf "%s\t%s\t%s\t[%s]\n", $1, $2, $3, $4 }' \
+        | fzf --prompt="Codespace SSH> " \
+              --with-nth=2,3,4 \
+              --delimiter=$'\t' \
+              --height=40% \
+              --reverse \
+              --no-multi
+    )" || exit 0
+else
+    # Fallback: numbered list
+    echo ""
+    echo "  Available Codespaces"
+    echo "  --------------------"
+    i=1
+    for r in "${rows[@]}"; do
+        IFS=$'\t' read -r _name disp repo state <<< "$r"
+        printf "  %2d)  %s - %s [%s]\n" "$i" "$disp" "$repo" "$state"
+        i=$((i + 1))
+    done
+    echo ""
+    printf "Select a codespace number (or leave blank to exit): "
+    read -r n
+    [ -z "${n:-}" ] && exit 0
+    case "$n" in
+        ''|*[!0-9]*)
+            echo "Invalid selection." >&2; exit 1 ;;
+    esac
+    if [ "$n" -lt 1 ] || [ "$n" -gt "${#rows[@]}" ]; then
+        echo "Invalid selection." >&2
+        exit 1
+    fi
+    chosen_tsv="${rows[$((n - 1))]}"
+fi
+
+# Parse chosen row
+IFS=$'\t' read -r cs_name cs_display _cs_repo _cs_state <<< "$chosen_tsv"
+
+# ── Tab / window title (OSC 0 and OSC 2, both work in iTerm2) ────────────────
+
+printf '\033]0;%s\007' "$cs_display"
+printf '\033]2;%s\007' "$cs_display"
+
+clear
+
+# ── Connect ──────────────────────────────────────────────────────────────────
+
+exec gh codespace ssh -c "$cs_name"

@@ -1,0 +1,13 @@
+{
+  "Profiles": [
+    {
+      "Name": "Codespace SSH",
+      "Guid": "7C2B5E5E-0F01-4E5F-90A2-5E4B45B9B0B1",
+      "Custom Command": "Yes",
+      "Command": "/usr/bin/env bash -lc \"$HOME/.local/bin/codespace-ssh\"",
+      "Working Directory": "~",
+      "Tags": ["GitHub"],
+      "Unlimited Scrollback": true
+    }
+  ]
+}

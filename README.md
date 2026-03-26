@@ -43,7 +43,7 @@ gh extension remove codespace-windows-terminal
 ### macOS
 - [GitHub CLI](https://cli.github.com/) (`gh`) — authenticated with `gh auth login`
 - [iTerm2](https://iterm2.com/)
-- `python3` (included with macOS or via Homebrew)
+- `python3` (required; check with `python3 --version` and install via Homebrew or Xcode Command Line Tools if missing)
 - [`fzf`](https://github.com/junegunn/fzf) (optional, recommended — `brew install fzf`) — provides an arrow-key searchable picker; falls back to a numbered menu without it
 
 ## How it works

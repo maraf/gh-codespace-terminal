@@ -6,7 +6,7 @@
       "Custom Command": "Yes",
       "Command": "/usr/bin/env bash -lc \"$HOME/.local/bin/codespace-ssh\"",
       "Working Directory": "~",
-      "Tags": ["github", "codespaces"],
+      "Tags": ["GitHub"],
       "Unlimited Scrollback": true
     }
   ]

@@ -2,6 +2,17 @@
 # Interactive codespace SSH launcher with tab-title integration for iTerm2.
 set -euo pipefail
 
+# Ensure common macOS tool paths are available (iTerm2 dynamic profiles may
+# launch with a minimal PATH that doesn't include Homebrew or MacPorts).
+for _p in /opt/homebrew/bin /usr/local/bin /opt/local/bin; do
+    case ":${PATH}:" in
+        *":${_p}:"*) ;;
+        *) [ -d "$_p" ] && PATH="${_p}:${PATH}" ;;
+    esac
+done
+export PATH
+unset _p
+
 # Verify gh is available
 if ! command -v gh >/dev/null 2>&1; then
     echo "Missing dependency: gh" >&2

@@ -1,4 +1,4 @@
-# gh-codespace-windows-terminal
+# gh-codespace-terminal
 
 A [GitHub CLI extension](https://docs.github.com/en/github-cli/github-cli/using-github-cli-extensions) that adds a **Codespace SSH** profile to [Windows Terminal](https://github.com/microsoft/terminal) (Windows) or [iTerm2](https://iterm2.com/) (macOS).
 
@@ -9,8 +9,8 @@ The extension automatically detects the operating system and installs the approp
 ## Install
 
 ```
-gh extension install <owner>/gh-codespace-windows-terminal
-gh codespace-windows-terminal install
+gh extension install <owner>/gh-codespace-terminal
+gh codespace-terminal install
 ```
 
 - **Windows**: restart Windows Terminal — you'll see **Codespace SSH** in the new tab dropdown.
@@ -19,8 +19,8 @@ gh codespace-windows-terminal install
 ## Uninstall
 
 ```
-gh codespace-windows-terminal uninstall
-gh extension remove codespace-windows-terminal
+gh codespace-terminal uninstall
+gh extension remove codespace-terminal
 ```
 
 ## Features
@@ -53,7 +53,7 @@ gh extension remove codespace-windows-terminal
 The extension installs two files as a Windows Terminal fragment at:
 
 ```
-%LOCALAPPDATA%\Microsoft\Windows Terminal\Fragments\gh-codespace-windows-terminal\
+%LOCALAPPDATA%\Microsoft\Windows Terminal\Fragments\gh-codespace-terminal\
 ├── fragment.json        # Registers the profile with Windows Terminal
 └── codespace-ssh.ps1    # Interactive launcher script
 ```

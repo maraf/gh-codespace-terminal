@@ -85,13 +85,13 @@ show_status() {
 }
 
 show_help() {
-    echo "gh codespace-windows-terminal (macOS / iTerm2)"
+    echo "gh codespace-terminal (macOS / iTerm2)"
     echo ""
     echo "Adds a 'Codespace SSH' profile to iTerm2 that lets you"
     echo "interactively pick a codespace and SSH into it."
     echo ""
     echo "USAGE"
-    echo "  gh codespace-windows-terminal <command>"
+    echo "  gh codespace-terminal <command>"
     echo ""
     echo "COMMANDS"
     echo "  install     Install the iTerm2 Dynamic Profile and launcher script"

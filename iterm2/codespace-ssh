@@ -9,15 +9,19 @@ if ! command -v gh >/dev/null 2>&1; then
     exit 1
 fi
 
-# Fetch codespaces list
+# Fetch codespaces list — capture stdout (JSON) and stderr separately so that
+# any warnings/notices printed to stderr do not corrupt the JSON payload.
 echo ""
 printf "  Loading codespaces...\r"
-if ! json="$(gh codespace list --json name,displayName,repository,state 2>&1)"; then
+_gh_stderr="$(mktemp)"
+if ! json="$(gh codespace list --json name,displayName,repository,state 2>"$_gh_stderr")"; then
     printf "                        \r"
     echo "Failed to list codespaces. Make sure you're logged in: gh auth login" >&2
-    echo "$json" >&2
+    cat "$_gh_stderr" >&2
+    rm -f "$_gh_stderr"
     exit 1
 fi
+rm -f "$_gh_stderr"
 printf "                        \r"
 
 # Parse JSON into TSV rows: name<TAB>displayName<TAB>repository<TAB>state
@@ -26,7 +30,12 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 1
 fi
 
-mapfile -t rows < <(echo "$json" | python3 -c '
+# Use a while-read loop instead of mapfile for compatibility with Bash 3.2
+# (the default /bin/bash on macOS).
+rows=()
+while IFS= read -r line; do
+    [ -n "$line" ] && rows+=("$line")
+done < <(echo "$json" | python3 -c '
 import json, sys
 data = json.loads(sys.stdin.read() or "[]")
 for cs in data:
@@ -35,9 +44,14 @@ for cs in data:
     repo  = cs.get("repository", "")
     state = cs.get("state", "")
     print("{}\t{}\t{}\t{}".format(name, disp, repo, state))
-')
+' 2>&1) || {
+    printf "                        \r"
+    echo "Failed to parse codespace list. Unexpected output from 'gh codespace list':" >&2
+    echo "$json" >&2
+    exit 1
+}
 
-if [[ ${#rows[@]} -eq 0 ]]; then
+if [ ${#rows[@]} -eq 0 ]; then
     echo "No codespaces found."
     exit 0
 fi
@@ -65,14 +79,19 @@ else
     echo "  --------------------"
     i=1
     for r in "${rows[@]}"; do
-        IFS=$'\t' read -r _name disp repo state <<<"$r"
+        IFS=$'\t' read -r _name disp repo state <<< "$r"
         printf "  %2d)  %s - %s [%s]\n" "$i" "$disp" "$repo" "$state"
-        ((i++))
+        i=$((i + 1))
     done
     echo ""
-    read -r -p "Select a codespace number (or leave blank to exit): " n
-    [[ -z "${n:-}" ]] && exit 0
-    if ! [[ "$n" =~ ^[0-9]+$ ]] || (( n < 1 || n > ${#rows[@]} )); then
+    printf "Select a codespace number (or leave blank to exit): "
+    read -r n
+    [ -z "${n:-}" ] && exit 0
+    case "$n" in
+        ''|*[!0-9]*)
+            echo "Invalid selection." >&2; exit 1 ;;
+    esac
+    if [ "$n" -lt 1 ] || [ "$n" -gt "${#rows[@]}" ]; then
         echo "Invalid selection." >&2
         exit 1
     fi
@@ -80,7 +99,7 @@ else
 fi
 
 # Parse chosen row
-IFS=$'\t' read -r cs_name cs_display _cs_repo _cs_state <<<"$chosen_tsv"
+IFS=$'\t' read -r cs_name cs_display _cs_repo _cs_state <<< "$chosen_tsv"
 
 # ── Tab / window title (OSC 0 and OSC 2, both work in iTerm2) ────────────────
 
